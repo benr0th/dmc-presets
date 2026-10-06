@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dylan May Cry Presets</title>
+<meta name="description" content="Read, check and share Dylan May Cry combo presets for CONTROL Resonant.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="frame">
+  <header class="top">
+    <span>DMC // Preset archive</span>
+    <span class="top-right">Sector: The Gap</span>
+  </header>
+
+  <section class="hero">
+    <p class="kicker">Dylan May Cry &middot; a CONTROL Resonant mod</p>
+    <h1>Preset<br>Archive</h1>
+    <p class="lede">Paste a preset you copied from the Combo List to read it, see what it needs, and share it as a link.</p>
+  </section>
+
+  <section id="shared" class="block" hidden>
+    <h2 class="label"><span>00</span> Incoming file</h2>
+    <p class="hint">Someone sent you this preset. Copy it, then in the game: <b>Pause &gt; Combo List &gt; Presets &gt; Paste a copied preset</b>.</p>
+    <div id="shared-card"></div>
+  </section>
+
+  <section class="block">
+    <h2 class="label"><span>01</span> Decode</h2>
+    <p class="hint">In the game: <b>Combo List &gt; Presets</b>, pick a preset, <b>Copy as text</b>. Paste it here.</p>
+    <textarea id="input" aria-label="Preset text" spellcheck="false" autocomplete="off" placeholder="; Dylan May Cry preset (CONTROL Resonant mod; ...)
+[My Preset]
+LH = Uppercut Surge, Hit 1
+LLH = Crush, Heavy finisher"></textarea>
+    <div class="input-bar">
+      <p id="status" class="status" role="status"></p>
+      <button type="button" id="example" class="ghost">Load an example</button>
+    </div>
+  </section>
+
+  <section id="results" class="block" hidden>
+    <h2 class="label"><span>02</span> Files</h2>
+    <div id="cards" class="cards"></div>
+  </section>
+
+  <footer class="foot">
+    <p>Fan-made page for the Dylan May Cry mod. Not affiliated with Remedy Entertainment.</p>
+    <p>Nothing you paste leaves your browser. A share link holds the whole preset.</p>
+  </footer>
+</div>
+<div id="toast" class="toast" aria-live="polite"></div>
+<script src="presets.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
