@@ -28,6 +28,11 @@
     const MAX_CLIPBOARD_CHARS = 16 * 1024;  // the mod doesn't read a longer clipboard text
     const HEADER = '; Dylan May Cry preset';
     const ABILITIES_KEY = 'Abilities';
+    // Sharing updates (mod, 2026-10-06): "Id = 9F3A12C4" (made when the preset is first saved, kept through overwrites) and
+    // "Updated = 2026-10-06 17:45 UTC" (when it was last saved). Pasting a newer version of an Id you have in the game
+    // replaces yours.
+    const ID_KEY = 'Id';
+    const UPDATED_KEY = 'Updated';
 
     // Readable names for the game's ability keys. Unknown keys are made readable from the key (ABILITY_MOLD_TURRET ->
     // Mold Turret); add a key here when the game's name differs.
@@ -102,8 +107,32 @@
             name: '',
             moves: PRESSES.map(() => ({ weapon: 0, move: 1 })),
             abilities: new Array(SLOT_COUNT).fill(''),
+            id: 0,       // 32-bit, 0 = none
+            updated: 0,  // Unix seconds, 0 = not known
             skipped: [],
         };
+    }
+
+    const two = n => (n < 10 ? '0' : '') + n;
+
+    // "2026-10-06 17:45 UTC" for Unix seconds.
+    function updatedText(t) {
+        const d = new Date(t * 1000);
+        return d.getUTCFullYear() + '-' + two(d.getUTCMonth() + 1) + '-' + two(d.getUTCDate()) + ' ' +
+            two(d.getUTCHours()) + ':' + two(d.getUTCMinutes()) + ' UTC';
+    }
+
+    // ParseUpdated: Unix seconds from "2026-10-06 17:45 UTC" (time optional), 0 if it isn't one.
+    function parseUpdated(text) {
+        const m = /^(\d+)-(\d+)-(\d+)(?:\s+(\d+):(\d+))?/.exec(trim(text));
+        if (!m) return 0;
+        const [y, mo, d, h, mi] = [m[1], m[2], m[3], m[4] || 0, m[5] || 0].map(Number);
+        if (y < 2026 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59) return 0;
+        return Date.UTC(y, mo - 1, d, h, mi) / 1000;
+    }
+
+    function idText(id) {
+        return id.toString(16).toUpperCase().padStart(8, '0');
     }
 
     // "3:ABILITY_SHIELD, 6:ABILITY_PUSH" (slots 1-6); unknown parts are skipped.
@@ -124,6 +153,16 @@
         const equals = text.indexOf('=');
         if (equals >= 0 && trim(text.slice(0, equals)).toLowerCase() === ABILITIES_KEY.toLowerCase()) {
             parseAbilities(text.slice(equals + 1), preset.abilities);
+            return;
+        }
+        const key = equals >= 0 ? trim(text.slice(0, equals)).toLowerCase() : '';
+        if (key === ID_KEY.toLowerCase()) {
+            const value = trim(text.slice(equals + 1));
+            preset.id = /^[0-9A-Fa-f]{1,8}$/.test(value) ? parseInt(value, 16) >>> 0 : 0;
+            return;
+        }
+        if (key === UPDATED_KEY.toLowerCase()) {
+            preset.updated = parseUpdated(text.slice(equals + 1));
             return;
         }
         const comma = text.indexOf(',', equals < 0 ? 0 : equals);
@@ -195,6 +234,8 @@
     function presetText(preset) {
         let out = HEADER + ' (CONTROL Resonant mod; copy all of this, then Combo List > Presets > Paste a copied preset)\r\n[' +
             preset.name + ']\r\n';
+        if (preset.id) out += ID_KEY + ' = ' + idText(preset.id) + '\r\n';
+        if (preset.updated) out += UPDATED_KEY + ' = ' + updatedText(preset.updated) + '\r\n';
         PRESSES.forEach((presses, i) => {
             const m = preset.moves[i];
             if (m.weapon !== 0) out += presses + ' = ' + WEAPONS[m.weapon] + ', ' + MOVES[m.move] + '\r\n';
@@ -214,7 +255,8 @@
     // ---- Share links: the preset packed into bytes, base64url, in the URL hash (#p=...) ----
     // v1: [1] [name length] [name UTF-8] [combo count] ([combo index] [weapon << 4 | move])...
     //     [ability count] ([slot 0-5, 0x80 = "ABILITY_" left out] [key length] [key])...
-    const LINK_VERSION = 1;
+    // v2: [2] [id, 4 bytes big-endian] [updated, Unix seconds, 4 bytes big-endian], then v1 from the name on.
+    const LINK_VERSION = 2;
     const ABILITY_PREFIX = 'ABILITY_';
 
     function toBase64Url(bytes) {
@@ -231,6 +273,8 @@
 
     function encode(preset) {
         const bytes = [LINK_VERSION];
+        const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
+        bytes.push(...u32(preset.id >>> 0), ...u32(preset.updated >>> 0));
         const name = new TextEncoder().encode(preset.name);
         bytes.push(name.length, ...name);
         const combos = [];
@@ -255,7 +299,7 @@
     function decode(text) {
         try {
             const b = fromBase64Url(text);
-            if (!b || b[0] !== LINK_VERSION) return null;
+            if (!b || (b[0] !== 1 && b[0] !== 2)) return null;
             let at = 1;
             const take = n => {
                 if (at + n > b.length) throw new Error('short');
@@ -264,6 +308,11 @@
                 return out;
             };
             const preset = emptyPreset();
+            if (b[0] === 2) {
+                const u32 = () => { const x = take(4); return ((x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3]) >>> 0; };
+                preset.id = u32();
+                preset.updated = u32();
+            }
             const nameLength = take(1)[0];
             preset.name = cleanName(new TextDecoder('utf-8', { fatal: true }).decode(take(nameLength)));
             const combos = take(1)[0];
@@ -300,7 +349,7 @@
         PRESSES, BASICS, WEAPONS, MOVES, WEAPON_ABILITY, MOVE_DODGE, MOVE_HEAVY_FINISHER, SLOT_COUNT,
         MAX_CLIPBOARD_CHARS, HEADER,
         weaponKind, makesMove, cleanName, abilityName, abilitySlot, usedSlots, comboCount,
-        parsePresetText, presetText, encode, decode, fileNumber,
+        parsePresetText, presetText, encode, decode, fileNumber, idText, updatedText,
     };
     if (typeof module !== 'undefined') module.exports = root.DMCPresets;
 })(typeof window !== 'undefined' ? window : globalThis);

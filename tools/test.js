@@ -42,6 +42,19 @@ assert.strictEqual(back.abilities[2], 'ABILITY_SHIELD');
 assert.strictEqual(back.abilities[5], '', 'unused slot not in the link');
 assert.strictEqual(back.name, p.name);
 assert.strictEqual(P.cleanName(' [a]=b;"c' + String.fromCharCode(92) + 'x'.repeat(40)), 'abc' + 'x'.repeat(28), 'cleanName strips, caps at 32 bytes (the space counts), trims');
+// Id / Updated (mod, 2026-10-06): text and link round trips; a v1 link still opens.
+const stamped = P.parsePresetText(shared.replace('[Shield Bash ✦ Ünïcode]\n',
+    '[Shield Bash ✦ Ünïcode]\nId = 9f3a12c4\nUpdated = 2026-10-06 17:45 UTC\n')).presets[0];
+assert.strictEqual(stamped.id, 0x9F3A12C4);
+assert.strictEqual(stamped.updated, Date.UTC(2026, 9, 6, 17, 45) / 1000);
+assert(P.presetText(stamped).includes('\r\nId = 9F3A12C4\r\nUpdated = 2026-10-06 17:45 UTC\r\n'));
+const stampedBack = P.decode(P.encode(stamped));
+assert.strictEqual(stampedBack.id, stamped.id);
+assert.strictEqual(stampedBack.updated, stamped.updated);
+assert.deepStrictEqual(stampedBack.moves, stamped.moves);
+const v1 = P.decode('AQVBbHBoYQEAEQA');   // a v1 link made before stamps: [Alpha] LH = Strike, Hit 1
+assert(v1 && v1.name === 'Alpha' && v1.id === 0 && v1.updated === 0, 'v1 links still decode');
+assert.strictEqual(P.parsePresetText('[a]\nId = nothex\nUpdated = soon\nLH = Crush, Hit 1\n').presets[0].id, 0);
 assert.strictEqual(P.decode('garbage!'), null);
 assert.strictEqual(P.decode(''), null);
 assert.strictEqual(P.decode(code.slice(0, 5)), null);

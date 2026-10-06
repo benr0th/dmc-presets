@@ -52,6 +52,12 @@
         return location.origin + location.pathname + '#p=' + code;
     }
 
+    // Unix seconds as "6 Oct 2026, 17:45" in the reader's time zone.
+    function localTime(t) {
+        return new Date(t * 1000).toLocaleString(undefined,
+            { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
     // ---- a preset as a card ----
     function pressKeys(presses) {
         const keys = el('span', 'keys');
@@ -119,7 +125,8 @@
         const doc = el('article', 'doc');
 
         const band = el('div', 'doc-band');
-        band.appendChild(el('span', '', 'Bureau file No. ' + P.fileNumber(code)));
+        // its Id when it has one: the same file number across its updates
+        band.appendChild(el('span', '', 'Bureau file No. ' + (preset.id ? P.idText(preset.id) : P.fileNumber(code))));
         band.appendChild(el('span', '', 'Dylan May Cry preset'));
         doc.appendChild(band);
 
@@ -130,6 +137,7 @@
         const basics = combos.filter(i => P.BASICS.has(P.PRESSES[i]));
         const meta = [strings.length + (strings.length === 1 ? ' combo' : ' combos')];
         if (basics.length) meta.push(basics.length + ' basic attack' + (basics.length === 1 ? '' : 's'));
+        if (preset.updated) meta.push('Updated ' + localTime(preset.updated));
         head.appendChild(el('p', 'doc-meta', meta.join(' · ')));
         doc.appendChild(head);
 
