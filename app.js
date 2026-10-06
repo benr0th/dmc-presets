@@ -44,6 +44,10 @@
         toast(done);
     }
 
+    function copyForGame(preset) {
+        copy(P.presetText(preset), 'Copied. In the game: Combo List > Presets > Paste a copied preset');
+    }
+
     function linkFor(code) {
         return location.origin + location.pathname + '#p=' + code;
     }
@@ -158,8 +162,7 @@
         const actions = el('div', 'doc-actions');
         const copyText = el('button', 'primary', 'Copy for the game');
         copyText.type = 'button';
-        copyText.addEventListener('click', () => copy(P.presetText(preset),
-            'Copied. In the game: Combo List > Presets > Paste a copied preset'));
+        copyText.addEventListener('click', () => copyForGame(preset));
         const copyLink = el('button', 'secondary', 'Copy share link');
         copyLink.type = 'button';
         copyLink.addEventListener('click', () => {
@@ -220,22 +223,27 @@
     });
 
     // ---- a shared link ----
+    // Opened from a link: the copy button goes right under the (smaller) title, the card follows.
+    let sharedPreset = null;
     function openLink() {
         const match = /^#p=([A-Za-z0-9_-]+)$/.exec(location.hash);
         const box = $('shared-card');
         box.replaceChildren();
+        sharedPreset = match ? P.decode(match[1]) : null;
+        document.body.classList.toggle('has-shared', sharedPreset !== null);
+        $('handoff').hidden = sharedPreset === null;
         if (!match) {
             $('shared').hidden = true;
             return;
         }
-        const preset = P.decode(match[1]);
-        if (preset) {
-            box.appendChild(card(preset, { shared: true }));
+        if (sharedPreset) {
+            box.appendChild(card(sharedPreset, { shared: true }));
         } else {
             box.appendChild(el('p', 'status bad', 'This link has no preset in it (cut short when it was pasted?).'));
         }
         $('shared').hidden = false;
     }
+    $('shared-copy').addEventListener('click', () => { if (sharedPreset) copyForGame(sharedPreset); });
     window.addEventListener('hashchange', openLink);
     openLink();
 })();

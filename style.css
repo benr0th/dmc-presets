@@ -160,6 +160,30 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ghost { background: none; color: var(--text); border: 1px solid #444; }
 .ghost:hover { border-color: var(--text); }
 
+/* a shared link: copy it first */
+.handoff {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+    margin: 0 0 28px;
+    padding: 18px 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--text);
+}
+.handoff[hidden] { display: none; }
+.handoff .hint { flex: 1 1 22em; margin: 0; }
+.light { padding: 14px 26px; background: var(--text); color: var(--ink); border: 2px solid var(--text); font-size: 15px; }
+.light:hover { background: #fff; border-color: #fff; }
+
+body.has-shared .hero { padding: 28px 0 24px 22px; }
+body.has-shared .hero::before { top: 30px; bottom: 26px; width: 6px; }
+body.has-shared h1 { font-size: clamp(40px, 7vw, 72px); }
+body.has-shared .lede { display: none; }
+body.has-shared #shared { padding-top: 28px; }
+
 /* ---- a preset: a Bureau document ---- */
 .cards { display: grid; gap: 32px; }
 
