@@ -181,7 +181,6 @@
         actions.appendChild(copyText);
         actions.appendChild(copyLink);
         doc.appendChild(actions);
-        doc.appendChild(el('span', 'stamp', 'Cleared'));
         return doc;
     }
 

@@ -207,7 +207,7 @@ body.has-shared #shared { padding-top: 28px; }
     text-transform: uppercase;
 }
 .doc-band span:last-child { color: #9a9892; }
-.doc-head { margin: 0 20px; padding: 20px 130px 4px 0; border-bottom: 2px solid var(--ink); }
+.doc-head { margin: 0 20px; padding: 20px 0 4px 0; border-bottom: 2px solid var(--ink); }
 .doc-title {
     margin: 0;
     font-size: clamp(30px, 6vw, 46px);
@@ -300,25 +300,6 @@ body.has-shared #shared { padding-top: 28px; }
 .secondary:hover { background: var(--ink); color: var(--paper); }
 .doc button:focus-visible { outline-color: var(--ink); }
 
-.stamp {
-    position: absolute;
-    top: 46px;
-    right: 18px;
-    padding: 4px 12px;
-    border: 3px solid #c4221a;
-    color: #c4221a;
-    font-size: 18px;
-    font-weight: 900;
-    font-variation-settings: 'wdth' 75;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    transform: rotate(8deg);
-    /* inked unevenly: its left and right edges cut off */
-    clip-path: inset(0 4px 0 5px);
-    opacity: .8;
-    pointer-events: none;
-}
-
 /* ---- footer, toast ---- */
 .foot {
     margin-top: 56px;
@@ -358,6 +339,4 @@ body.has-shared #shared { padding-top: 28px; }
     .row .arrow { display: none; }
     .row .what { grid-column: 1 / -1; grid-row: 2; }
     .req { grid-template-columns: 1fr; gap: 4px; }
-    .stamp { display: none; }
-    .doc-head { padding-right: 0; }
 }
