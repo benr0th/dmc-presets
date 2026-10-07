@@ -36,7 +36,7 @@
 
     // Readable names for the game's ability keys. Unknown keys are made readable from the key (ABILITY_MOLD_TURRET ->
     // Mold Turret); add a key here when the game's name differs.
-    const ABILITY_NAMES = {ABILITY_NEEDLES: "Spore Burst"};
+    const ABILITY_NAMES = {ABILITY_NEEDLES: "Spore Burst", ABILITY_SUNDER: "Astral Rebuke"};
 
     function weaponKind(w) {
         return w === 0 ? 'off' : w <= 3 ? 'light' : w <= 6 ? 'heavy' : w <= 12 ? 'finisher' : 'ability';
