@@ -238,6 +238,7 @@
         box.replaceChildren();
         sharedPreset = match ? P.decode(match[1]) : null;
         document.body.classList.toggle('has-shared', sharedPreset !== null);
+        $('decode-label').textContent = sharedPreset !== null ? 'Share your own' : 'Decode';
         $('handoff').hidden = sharedPreset === null;
         if (!match) {
             $('shared').hidden = true;
@@ -251,6 +252,11 @@
         $('shared').hidden = false;
     }
     $('shared-copy').addEventListener('click', () => { if (sharedPreset) copyForGame(sharedPreset); });
+    // Someone who opened a link and wants to share their own: the paste box is below the shared card.
+    $('share-own').addEventListener('click', () => {
+        $('decode').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => $('input').focus({ preventScroll: true }), 450);
+    });
     window.addEventListener('hashchange', openLink);
     openLink();
 })();

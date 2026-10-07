@@ -27,14 +27,17 @@
     <h2 class="label"><span>00</span> Incoming file</h2>
     <div id="handoff" class="handoff">
       <p class="hint">Someone sent you this preset. Copy it, then in the game: <b>Pause &gt; Combo List &gt; Presets &gt; Paste a copied preset</b>.</p>
-      <button type="button" id="shared-copy" class="light">Copy for the game</button>
+      <div class="handoff-actions">
+        <button type="button" id="shared-copy" class="light">Copy for the game</button>
+        <button type="button" id="share-own" class="ghost">Share your own &darr;</button>
+      </div>
     </div>
     <div id="shared-card"></div>
   </section>
 
-  <section class="block">
-    <h2 class="label"><span>01</span> Decode</h2>
-    <p class="hint">In the game: <b>Combo List &gt; Presets</b>, pick a preset, <b>Copy as text</b>. Paste it here.</p>
+  <section id="decode" class="block">
+    <h2 class="label"><span>01</span> <span class="label-text" id="decode-label">Decode</span></h2>
+    <p class="hint"><span class="shared-only">Want to share one of yours? </span>In the game: <b>Combo List &gt; Presets</b>, pick a preset, <b>Copy as text</b>. Paste it here, then <b>Copy share link</b>.</p>
     <textarea id="input" aria-label="Preset text" spellcheck="false" autocomplete="off" placeholder="; Dylan May Cry preset (CONTROL Resonant mod; ...)
 [My Preset]
 LH = Uppercut Surge, Hit 1
