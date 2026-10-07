@@ -191,6 +191,7 @@
         const cards = $('cards');
         cards.replaceChildren();
         status.className = 'status';
+        $('share-now').hidden = true;
         if (!text.trim()) {
             status.textContent = '';
             $('results').hidden = true;
@@ -216,6 +217,25 @@
         status.textContent = notes.join(' · ');
         for (const p of r.presets) cards.appendChild(card(p));
         $('results').hidden = false;
+        shareNow(r.presets);
+    }
+
+    // The share link right under the paste box (user: people won't scroll to the card's own button).
+    function shareNow(presets) {
+        const buttons = $('share-now-buttons');
+        buttons.replaceChildren();
+        $('share-now-text').replaceChildren(
+            document.createTextNode(presets.length === 1 ? 'Ready to share. Copy the link and send it to anyone: '
+                                                         : 'Ready to share. Copy a link and send it to anyone: '),
+            el('b', '', 'it opens this page with your preset.'));
+        for (const preset of presets) {
+            const code = P.encode(preset);
+            const b = el('button', 'light', presets.length === 1 ? 'Copy share link' : 'Copy link: ' + preset.name);
+            b.type = 'button';
+            b.addEventListener('click', () => copy(linkFor(code), 'Link copied'));
+            buttons.appendChild(b);
+        }
+        $('share-now').hidden = false;
     }
 
     let renderTimer = 0;

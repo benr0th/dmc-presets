@@ -178,6 +178,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .handoff-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .handoff-actions .ghost { padding: 14px 20px; font-size: 15px; }
 .shared-only { display: none; }
+.share-now { margin: 16px 0 0; }
 body.has-shared .shared-only { display: inline; }
 .light { padding: 14px 26px; background: var(--text); color: var(--ink); border: 2px solid var(--text); font-size: 15px; }
 .light:hover { background: #fff; border-color: #fff; }
