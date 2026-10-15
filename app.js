@@ -63,7 +63,7 @@
         const keys = el('span', 'keys');
         for (const c of presses) {
             if (c === 'B' || c === 'F') {  // motion rows: back / forward on the stick
-                const dir = el('span', 'key key-dir', c === 'B' ? '←' : '→');
+                const dir = el('span', 'key key-dir', c === 'B' ? '↓' : '↑');
                 dir.title = c === 'B' ? 'Back' : 'Forward';
                 keys.appendChild(dir);
             } else {
