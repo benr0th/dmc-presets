@@ -61,7 +61,15 @@
     // ---- a preset as a card ----
     function pressKeys(presses) {
         const keys = el('span', 'keys');
-        for (const c of presses) keys.appendChild(el('span', 'key key-' + c.toLowerCase(), c));
+        for (const c of presses) {
+            if (c === 'B' || c === 'F') {  // motion rows: back / forward on the stick
+                const dir = el('span', 'key key-dir', c === 'B' ? '←' : '→');
+                dir.title = c === 'B' ? 'Back' : 'Forward';
+                keys.appendChild(dir);
+            } else {
+                keys.appendChild(el('span', 'key key-' + c.toLowerCase(), c));
+            }
+        }
         return keys;
     }
 
@@ -133,10 +141,12 @@
         const head = el('div', 'doc-head');
         head.appendChild(el('h3', 'doc-title', preset.name));
         const combos = P.PRESSES.map((_, i) => i).filter(i => preset.moves[i].weapon !== 0);
-        const strings = combos.filter(i => !P.BASICS.has(P.PRESSES[i]));
+        const strings = combos.filter(i => !P.BASICS.has(P.PRESSES[i]) && !P.MOTIONS.has(P.PRESSES[i]));
         const basics = combos.filter(i => P.BASICS.has(P.PRESSES[i]));
+        const motions = combos.filter(i => P.MOTIONS.has(P.PRESSES[i]));
         const meta = [strings.length + (strings.length === 1 ? ' combo' : ' combos')];
         if (basics.length) meta.push(basics.length + ' basic attack' + (basics.length === 1 ? '' : 's'));
+        if (motions.length) meta.push(motions.length + ' motion input' + (motions.length === 1 ? '' : 's'));
         if (preset.updated) meta.push('Updated ' + localTime(preset.updated));
         head.appendChild(el('p', 'doc-meta', meta.join(' · ')));
         doc.appendChild(head);
@@ -150,6 +160,7 @@
         };
         section('Combos', strings);
         section('Basic attacks', basics);
+        section('Motion input (locked on)', motions);
 
         if (preset.skipped.length) {
             const red = el('div', 'redacted');

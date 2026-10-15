@@ -16,10 +16,12 @@
         'LHHHLH', 'LHHHHL', 'LHHHHH', 'HLLLLL', 'HLLLLH', 'HLLLHL', 'HLLLHH', 'HLLHLL', 'HLLHLH', 'HLLHHL', 'HLLHHH',
         'HLHLLL', 'HLHLLH', 'HLHLHL', 'HLHLHH', 'HLHHLL', 'HLHHLH', 'HLHHHL', 'HLHHHH', 'HHLLLL', 'HHLLLH', 'HHLLHL',
         'HHLLHH', 'HHLHLL', 'HHLHLH', 'HHLHHL', 'HHLHHH', 'HHHLLL', 'HHHLLH', 'HHHLHL', 'HHHLHH', 'HHHHLL', 'HHHHLH',
-        'HHHHHL', 'HHHHHH', 'L', 'LL', 'LLL', 'H', 'HH', 'HHH'];
+        'HHHHHL', 'HHHHHH', 'L', 'LL', 'LLL', 'H', 'HH', 'HHH', 'BFL', 'BFH', 'FL', 'FH', 'BL', 'BH', 'FBL', 'FBH'];
     const BASICS = new Set(['L', 'LL', 'LLL', 'H', 'HH', 'HHH']);
+    // Motion input rows (mod 0.7.0+, while locked on): B = back, F = forward on the stick, then the attack.
+    const MOTIONS = new Set(['BFL', 'BFH', 'FL', 'FH', 'BL', 'BH', 'FBL', 'FBH']);
     // config.h kPatternWeaponNames / kPatternMoveNames.
-    const WEAPONS = ['Off', 'Strike', 'Cleave', 'Slash', 'Crush', 'Drill', 'Extend', 'Uppercut Surge',
+    const WEAPONS = ['Off', 'Strike', 'Cleave', 'Glaive', 'Crush', 'Drill', 'Extend', 'Uppercut Surge',
         'Concussive Beatdown', 'Wide Edge', 'Spin Edge', 'Split Pivot', 'Split Orbit', 'Combat ability'];
     const MOVES = ['', 'Hit 1', 'Hit 2', 'Hit 3', 'Dodge attack', 'Heavy finisher', 'Ability slot 1', 'Ability slot 2',
         'Ability slot 3', 'Ability slot 4', 'Ability slot 5', 'Ability slot 6'];
@@ -169,10 +171,13 @@
         if (text === '' || text[0] === ';' || equals < 0 || comma < 0) return;
         let presses = '';
         for (const c of trim(text.slice(0, equals))) {
-            if (c === 'l' || c === 'L' || c === 'h' || c === 'H') presses += c.toUpperCase();
+            const upper = c.toUpperCase();
+            if (upper === 'L' || upper === 'H' || upper === 'B' || upper === 'F') presses += upper;  // B F: motion rows
         }
         const index = PRESSES.indexOf(presses);
-        const weapon = lookup(trim(text.slice(equals + 1, comma)), WEAPONS);
+        // Glaive was called Slash up to mod 0.6.8: older presets still load (commandlist.cpp does the same).
+        const weaponName = trim(text.slice(equals + 1, comma));
+        const weapon = weaponName.toLowerCase() === 'slash' ? 3 : lookup(weaponName, WEAPONS);
         const move = lookup(trim(text.slice(comma + 1)), MOVES);
         if (index < 0 || weapon < 0 || move < 0 || (weapon > 0 && !makesMove(weapon, move))) {
             preset.skipped.push(text);
@@ -346,7 +351,7 @@
     }
 
     root.DMCPresets = {
-        PRESSES, BASICS, WEAPONS, MOVES, WEAPON_ABILITY, MOVE_DODGE, MOVE_HEAVY_FINISHER, SLOT_COUNT,
+        PRESSES, BASICS, MOTIONS, WEAPONS, MOVES, WEAPON_ABILITY, MOVE_DODGE, MOVE_HEAVY_FINISHER, SLOT_COUNT,
         MAX_CLIPBOARD_CHARS, HEADER,
         weaponKind, makesMove, cleanName, abilityName, abilitySlot, usedSlots, comboCount,
         parsePresetText, presetText, encode, decode, fileNumber, idText, updatedText,
