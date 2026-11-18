@@ -1,6 +1,7 @@
 // Dylan May Cry presets: the mod's preset text format, read and written as the mod does (src/dmc/commandlist.cpp:
 // ParsePresetText, AddComboLine, CleanName, PresetText; src/dmc/menuvalidate.cpp: MakesMove). Keep the tables in step
-// with src/common/config.h when the mod changes. No DOM here (node runs it for tests: tools/site_test.js).
+// with src/common/config.h when the mod changes (the mod's tests/presets-site.test.mjs compares them). No DOM here (node runs it for tests:
+// tools/test.js).
 (function (root) {
     'use strict';
 
@@ -16,16 +17,26 @@
         'LHHHLH', 'LHHHHL', 'LHHHHH', 'HLLLLL', 'HLLLLH', 'HLLLHL', 'HLLLHH', 'HLLHLL', 'HLLHLH', 'HLLHHL', 'HLLHHH',
         'HLHLLL', 'HLHLLH', 'HLHLHL', 'HLHLHH', 'HLHHLL', 'HLHHLH', 'HLHHHL', 'HLHHHH', 'HHLLLL', 'HHLLLH', 'HHLLHL',
         'HHLLHH', 'HHLHLL', 'HHLHLH', 'HHLHHL', 'HHLHHH', 'HHHLLL', 'HHHLLH', 'HHHLHL', 'HHHLHH', 'HHHHLL', 'HHHHLH',
-        'HHHHHL', 'HHHHHH', 'L', 'LL', 'LLL', 'H', 'HH', 'HHH', 'BFL', 'BFH', 'FL', 'FH', 'BL', 'BH', 'FBL', 'FBH'];
+        'HHHHHL', 'HHHHHH', 'L', 'LL', 'LLL', 'H', 'HH', 'HHH', 'BFL', 'BFH', 'FL', 'FH', 'BL', 'BH', 'FBL', 'FBH',
+        'DL', 'DH'];
     const BASICS = new Set(['L', 'LL', 'LLL', 'H', 'HH', 'HHH']);
     // Motion input rows (mod 0.7.0+, while locked on): B = back, F = forward on the stick, then the attack.
     const MOTIONS = new Set(['BFL', 'BFH', 'FL', 'FH', 'BL', 'BH', 'FBL', 'FBH']);
+    // Dodge rows: light / heavy pressed during a dodge, in place of the game's dodge attack. Their line in a preset's
+    // text is "Dodge = L: <weapon>, <move>" (commandlist.cpp kDodgeKey), not "DL = ...": mods before the rows read a
+    // line's key by its L / H / B / F letters alone, so "DL" would have set their L row.
+    const DODGES = new Set(['DL', 'DH']);
+    const DODGE_KEY = 'Dodge';
     // config.h kPatternWeaponNames / kPatternMoveNames.
     const WEAPONS = ['Off', 'Strike', 'Cleave', 'Glaive', 'Crush', 'Drill', 'Extend', 'Uppercut Surge',
-        'Concussive Beatdown', 'Wide Edge', 'Spin Edge', 'Split Pivot', 'Split Orbit', 'Combat ability'];
+        'Concussive Beatdown', 'Wide Edge', 'Spin Edge', 'Split Pivot', 'Split Orbit', 'Combat ability', 'Custom move'];
     const MOVES = ['', 'Hit 1', 'Hit 2', 'Hit 3', 'Dodge attack', 'Heavy finisher', 'Ability slot 1', 'Ability slot 2',
-        'Ability slot 3', 'Ability slot 4', 'Ability slot 5', 'Ability slot 6'];
+        'Ability slot 3', 'Ability slot 4', 'Ability slot 5', 'Ability slot 6', 'Sprint attack'];
     const WEAPON_ABILITY = 13, MOVE_DODGE = 4, MOVE_HEAVY_FINISHER = 5, MOVE_SLOT1 = 6, SLOT_COUNT = 6;
+    const MOVE_SPRINT = 12;  // a light form's sprint attack (mod 0.8.8)
+    // Weapon 14 = a Power Creator custom move; its move is the power's number, written "Power N" (config.h
+    // kPatternWeaponCustom / kCustomMoveMax, commandlist.cpp kPowerMovePrefix).
+    const WEAPON_CUSTOM = 14, CUSTOM_MOVE_MAX = 128, POWER_PREFIX = 'Power ';
     const MAX_NAME_BYTES = 32, MAX_ABILITY_KEY = 48, MAX_PRESETS = 10, MAX_LINES = 2000;
     const MAX_CLIPBOARD_CHARS = 16 * 1024;  // the mod doesn't read a longer clipboard text
     const HEADER = '; Dylan May Cry preset';
@@ -41,15 +52,18 @@
     const ABILITY_NAMES = {ABILITY_NEEDLES: "Spore Burst", ABILITY_SUNDER: "Astral Rebuke", ABILITY_FLAME_WAVE: "Inferno"};
 
     function weaponKind(w) {
-        return w === 0 ? 'off' : w <= 3 ? 'light' : w <= 6 ? 'heavy' : w <= 12 ? 'finisher' : 'ability';
+        return w === 0 ? 'off' : w <= 3 ? 'light' : w <= 6 ? 'heavy' : w <= 12 ? 'finisher' : w === WEAPON_ABILITY ? 'ability' : 'custom';
     }
 
     // menuvalidate.cpp Problem / MakesMove.
     function makesMove(w, m) {
-        if (!(w >= 1 && w < WEAPONS.length && m >= 1 && m < MOVES.length)) return false;
+        if (!(w >= 1 && w < WEAPONS.length && m >= 1)) return false;
+        if (w === WEAPON_CUSTOM) return m <= CUSTOM_MOVE_MAX;  // any number: Power Creator says whether it has it
+        if (m >= MOVES.length) return false;
         const light = w <= 3, heavy = w >= 4 && w <= 6;
-        if (w === WEAPON_ABILITY) return m >= MOVE_SLOT1;
-        if (m >= MOVE_SLOT1) return false;
+        const slotMove = m >= MOVE_SLOT1 && m < MOVE_SLOT1 + SLOT_COUNT;
+        if (w === WEAPON_ABILITY || slotMove) return w === WEAPON_ABILITY && slotMove;
+        if (!light && m === MOVE_SPRINT) return false;
         if (light && m === MOVE_HEAVY_FINISHER) return false;
         if (!light && !heavy && (m === MOVE_DODGE || m === MOVE_HEAVY_FINISHER)) return false;
         if ((w === 7 || w === 9) && m >= 2 && m <= 3) return false;
@@ -170,15 +184,34 @@
         const comma = text.indexOf(',', equals < 0 ? 0 : equals);
         if (text === '' || text[0] === ';' || equals < 0 || comma < 0) return;
         let presses = '';
-        for (const c of trim(text.slice(0, equals))) {
-            const upper = c.toUpperCase();
-            if (upper === 'L' || upper === 'H' || upper === 'B' || upper === 'F') presses += upper;  // B F: motion rows
+        let nameAt = equals;  // the weapon's name comes after it
+        if (key === DODGE_KEY.toLowerCase()) {
+            // a dodge row, "Dodge = L: <weapon>, <move>": its button, then the choice as any row's
+            const colon = text.indexOf(':', equals);
+            const button = colon < 0 || colon > comma ? '' : trim(text.slice(equals + 1, colon));
+            if (button.length === 1) {
+                presses = 'D' + button.toUpperCase();
+                nameAt = colon;
+            }
+        } else {
+            for (const c of trim(text.slice(0, equals))) {
+                const upper = c.toUpperCase();
+                if (upper === 'L' || upper === 'H' || upper === 'B' || upper === 'F') presses += upper;  // B F: motion rows
+            }
         }
         const index = PRESSES.indexOf(presses);
         // Glaive was called Slash up to mod 0.6.8: older presets still load (commandlist.cpp does the same).
-        const weaponName = trim(text.slice(equals + 1, comma));
+        const weaponName = trim(text.slice(nameAt + 1, comma));
         const weapon = weaponName.toLowerCase() === 'slash' ? 3 : lookup(weaponName, WEAPONS);
-        const move = lookup(trim(text.slice(comma + 1)), MOVES);
+        const moveText = trim(text.slice(comma + 1));
+        let move;
+        if (weapon === WEAPON_CUSTOM && moveText.toLowerCase().startsWith(POWER_PREFIX.toLowerCase())) {
+            const number = /^\s*[+-]?\d+/.exec(moveText.slice(POWER_PREFIX.length));  // "Power N", read as atoi does
+            move = number ? parseInt(number[0], 10) : 0;
+        } else {
+            // (an old mod build wrote a power row with the move name at its number, "Hit 2" = power 2: still read)
+            move = lookup(moveText, MOVES);
+        }
         if (index < 0 || weapon < 0 || move < 0 || (weapon > 0 && !makesMove(weapon, move))) {
             preset.skipped.push(text);
             return;
@@ -235,6 +268,18 @@
         return used;
     }
 
+    // The move's name in a preset's text and on a card ("Power 5" for a custom move).
+    function moveName(m) {
+        return m.weapon === WEAPON_CUSTOM ? POWER_PREFIX + m.move : MOVES[m.move];
+    }
+
+    // RowLine: a row's line in a preset's text.
+    function rowLine(index, m) {
+        const presses = PRESSES[index];
+        const choice = WEAPONS[m.weapon] + ', ' + moveName(m);
+        return DODGES.has(presses) ? DODGE_KEY + ' = ' + presses[1] + ': ' + choice : presses + ' = ' + choice;
+    }
+
     // PresetText: the text the mod's "Paste a copied preset" reads (same header, combo order and Abilities line).
     function presetText(preset) {
         let out = HEADER + ' (CONTROL Resonant mod; copy all of this, then Combo List > Presets > Paste a copied preset)\r\n[' +
@@ -243,7 +288,7 @@
         if (preset.updated) out += UPDATED_KEY + ' = ' + updatedText(preset.updated) + '\r\n';
         PRESSES.forEach((presses, i) => {
             const m = preset.moves[i];
-            if (m.weapon !== 0) out += presses + ' = ' + WEAPONS[m.weapon] + ', ' + MOVES[m.move] + '\r\n';
+            if (m.weapon !== 0) out += rowLine(i, m) + '\r\n';
         });
         const used = usedSlots(preset);
         const known = [];
@@ -261,7 +306,9 @@
     // v1: [1] [name length] [name UTF-8] [combo count] ([combo index] [weapon << 4 | move])...
     //     [ability count] ([slot 0-5, 0x80 = "ABILITY_" left out] [key length] [key])...
     // v2: [2] [id, 4 bytes big-endian] [updated, Unix seconds, 4 bytes big-endian], then v1 from the name on.
-    const LINK_VERSION = 2;
+    // v3: v2, but a custom move's combo is [combo index] [14 << 4] [its number] (the number doesn't fit 4 bits). Only
+    //     written for a preset with a custom move, so every other preset's link (and file number) stays as it was.
+    const LINK_VERSION = 2, LINK_VERSION_CUSTOM = 3;
     const ABILITY_PREFIX = 'ABILITY_';
 
     function toBase64Url(bytes) {
@@ -277,17 +324,23 @@
     }
 
     function encode(preset) {
-        const bytes = [LINK_VERSION];
+        const bytes = [preset.moves.some(m => m.weapon === WEAPON_CUSTOM) ? LINK_VERSION_CUSTOM : LINK_VERSION];
         const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
         bytes.push(...u32(preset.id >>> 0), ...u32(preset.updated >>> 0));
         const name = new TextEncoder().encode(preset.name);
         bytes.push(name.length, ...name);
         const combos = [];
-        preset.moves.forEach((m, i) => { if (m.weapon !== 0) combos.push(i, (m.weapon << 4) | m.move); });
-        bytes.push(combos.length / 2, ...combos);
+        let count = 0;
+        preset.moves.forEach((m, i) => {
+            if (m.weapon === 0) return;
+            if (m.weapon === WEAPON_CUSTOM) combos.push(i, m.weapon << 4, m.move);
+            else combos.push(i, (m.weapon << 4) | m.move);
+            count++;
+        });
+        bytes.push(count, ...combos);
         const used = usedSlots(preset);
         const abilities = [];
-        let count = 0;
+        count = 0;
         for (let s = 0; s < SLOT_COUNT; ++s) {
             const key = preset.abilities[s];
             if (!used[s] || !key) continue;
@@ -304,7 +357,7 @@
     function decode(text) {
         try {
             const b = fromBase64Url(text);
-            if (!b || (b[0] !== 1 && b[0] !== 2)) return null;
+            if (!b || !(b[0] >= 1 && b[0] <= LINK_VERSION_CUSTOM)) return null;
             let at = 1;
             const take = n => {
                 if (at + n > b.length) throw new Error('short');
@@ -313,7 +366,7 @@
                 return out;
             };
             const preset = emptyPreset();
-            if (b[0] === 2) {
+            if (b[0] >= 2) {
                 const u32 = () => { const x = take(4); return ((x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3]) >>> 0; };
                 preset.id = u32();
                 preset.updated = u32();
@@ -323,7 +376,9 @@
             const combos = take(1)[0];
             for (let c = 0; c < combos; ++c) {
                 const [index, wm] = take(2);
-                const weapon = wm >> 4, move = wm & 15;
+                const weapon = wm >> 4;
+                if (weapon === WEAPON_CUSTOM && b[0] < LINK_VERSION_CUSTOM) continue;
+                const move = weapon === WEAPON_CUSTOM ? take(1)[0] : wm & 15;
                 if (index < PRESSES.length && makesMove(weapon, move)) preset.moves[index] = { weapon, move };
             }
             const abilities = take(1)[0];
@@ -351,9 +406,10 @@
     }
 
     root.DMCPresets = {
-        PRESSES, BASICS, MOTIONS, WEAPONS, MOVES, WEAPON_ABILITY, MOVE_DODGE, MOVE_HEAVY_FINISHER, SLOT_COUNT,
+        PRESSES, BASICS, MOTIONS, DODGES, WEAPONS, MOVES, WEAPON_ABILITY, WEAPON_CUSTOM, MOVE_DODGE, MOVE_HEAVY_FINISHER,
+        MOVE_SPRINT, SLOT_COUNT,
         MAX_CLIPBOARD_CHARS, HEADER,
-        weaponKind, makesMove, cleanName, abilityName, abilitySlot, usedSlots, comboCount,
+        weaponKind, makesMove, moveName, cleanName, abilityName, abilitySlot, usedSlots, comboCount,
         parsePresetText, presetText, encode, decode, fileNumber, idText, updatedText,
     };
     if (typeof module !== 'undefined') module.exports = root.DMCPresets;

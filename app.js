@@ -4,11 +4,12 @@
     const P = window.DMCPresets;
     const $ = id => document.getElementById(id);
 
-    const KIND_LABEL = { light: 'Light form', heavy: 'Heavy form', finisher: 'Light finisher', ability: 'Ability' };
+    const KIND_LABEL = { light: 'Light form', heavy: 'Heavy form', finisher: 'Light finisher', ability: 'Ability', custom: 'Power Creator' };
     const EXAMPLE = '; Dylan May Cry preset (CONTROL Resonant mod; copy all of this, then Combo List > Presets > Paste a copied preset)\n' +
         '[Brawler]\nLH = Uppercut Surge, Hit 1\nHL = Concussive Beatdown, Hit 1\nLLH = Concussive Beatdown, Hit 2\n' +
         'LHL = Concussive Beatdown, Hit 2\nLHH = Crush, Heavy finisher\nHLL = Concussive Beatdown, Hit 3\n' +
         'HLH = Crush, Hit 3\nHHL = Crush, Dodge attack\nLLHH = Combat ability, Ability slot 3\nLHLH = Crush, Hit 2\n' +
+        'FL = Strike, Sprint attack\n' +
         'Abilities = 3:ABILITY_SHIELD\n';
 
     function el(tag, className, text) {
@@ -61,6 +62,10 @@
     // ---- a preset as a card ----
     function pressKeys(presses) {
         const keys = el('span', 'keys');
+        if (P.DODGES.has(presses)) {  // dodge rows: the button pressed during a dodge
+            keys.appendChild(el('span', 'key key-dodge', 'Dodge'));
+            presses = presses.slice(1);
+        }
         for (const c of presses) {
             if (c === 'B' || c === 'F') {  // motion rows: back / forward on the stick
                 const dir = el('span', 'key key-dir', c === 'B' ? '↓' : '↑');
@@ -75,7 +80,7 @@
 
     function moveText(preset, m) {
         const slot = P.abilitySlot(m);
-        if (slot < 0) return P.MOVES[m.move];
+        if (slot < 0) return P.moveName(m);
         const key = preset.abilities[slot];
         return 'Slot ' + (slot + 1) + (key ? ' · ' + P.abilityName(key) : '');
     }
@@ -98,7 +103,8 @@
     function requisitions(preset) {
         const groups = [
             ['Light forms', new Set()], ['Heavy forms', new Set()], ['Light finishers', new Set()],
-            ['Dodge attacks', new Set()], ['Heavy finishers', new Set()], ['Abilities', new Set()],
+            ['Dodge attacks', new Set()], ['Heavy finishers', new Set()], ['Sprint attacks', new Set()],
+            ['Abilities', new Set()], ['Power Creator', new Set()],
         ];
         const at = Object.fromEntries(groups);
         for (const m of preset.moves) {
@@ -107,8 +113,13 @@
             if (kind === 'light') at['Light forms'].add(name);
             if (kind === 'heavy') at['Heavy forms'].add(name);
             if (kind === 'finisher') at['Light finishers'].add(name);
+            if (kind === 'custom') {  // its number is a power of the preset maker's own
+                at['Power Creator'].add('Your own ' + P.moveName(m));
+                continue;
+            }
             if (m.move === P.MOVE_DODGE) at['Dodge attacks'].add(name);
             if (m.move === P.MOVE_HEAVY_FINISHER) at['Heavy finishers'].add(name);
+            if (m.move === P.MOVE_SPRINT) at['Sprint attacks'].add(name);
             if (kind === 'ability') {
                 const slot = P.abilitySlot(m), key = preset.abilities[slot];
                 at['Abilities'].add(key ? P.abilityName(key) : 'Whatever is in slot ' + (slot + 1));
@@ -121,7 +132,7 @@
             const line = el('div', 'req');
             line.appendChild(el('span', 'req-label', label));
             const chips = el('span', 'chips');
-            for (const n of [...names].sort()) chips.appendChild(el('span', 'chip', n));
+            for (const n of [...names].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))) chips.appendChild(el('span', 'chip', n));
             line.appendChild(chips);
             box.appendChild(line);
         }
@@ -141,12 +152,14 @@
         const head = el('div', 'doc-head');
         head.appendChild(el('h3', 'doc-title', preset.name));
         const combos = P.PRESSES.map((_, i) => i).filter(i => preset.moves[i].weapon !== 0);
-        const strings = combos.filter(i => !P.BASICS.has(P.PRESSES[i]) && !P.MOTIONS.has(P.PRESSES[i]));
+        const dodges = combos.filter(i => P.DODGES.has(P.PRESSES[i]));
+        const strings = combos.filter(i => !P.BASICS.has(P.PRESSES[i]) && !P.MOTIONS.has(P.PRESSES[i]) && !P.DODGES.has(P.PRESSES[i]));
         const basics = combos.filter(i => P.BASICS.has(P.PRESSES[i]));
         const motions = combos.filter(i => P.MOTIONS.has(P.PRESSES[i]));
         const meta = [strings.length + (strings.length === 1 ? ' combo' : ' combos')];
         if (basics.length) meta.push(basics.length + ' basic attack' + (basics.length === 1 ? '' : 's'));
         if (motions.length) meta.push(motions.length + ' motion input' + (motions.length === 1 ? '' : 's'));
+        if (dodges.length) meta.push(dodges.length + ' dodge row' + (dodges.length === 1 ? '' : 's'));
         if (preset.updated) meta.push('Updated ' + localTime(preset.updated));
         head.appendChild(el('p', 'doc-meta', meta.join(' · ')));
         doc.appendChild(head);
@@ -161,6 +174,7 @@
         section('Combos', strings);
         section('Basic attacks', basics);
         section('Motion input (locked on)', motions);
+        section('During a dodge', dodges);
 
         if (preset.skipped.length) {
             const red = el('div', 'redacted');

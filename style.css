@@ -257,6 +257,15 @@ body.has-shared #shared { padding-top: 28px; }
 .key-l { background: var(--ink); color: var(--paper); }
 .key-h { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
 .key-dir { background: transparent; color: var(--ink); font-size: 15px; }
+.key-dodge {
+    width: auto;
+    padding: 0 6px;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
+}
 
 .arrow { position: relative; height: 2px; background: var(--ink); width: 22px; }
 .arrow::after {
@@ -286,6 +295,7 @@ body.has-shared #shared { padding-top: 28px; }
 .tag-heavy { background: var(--ink); color: var(--paper); }
 .tag-finisher { border-width: 2px; padding: 2px 6px; }
 .tag-ability { border-style: dashed; }
+.tag-custom { border-style: dotted; border-width: 2px; padding: 2px 6px; }
 
 /* lines the mod skips: redaction bars */
 .redacted { margin: 16px 20px 0; padding: 12px 0 0; border-top: 1px dashed var(--paper-line); }

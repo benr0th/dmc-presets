@@ -55,6 +55,40 @@ assert.deepStrictEqual(stampedBack.moves, stamped.moves);
 const v1 = P.decode('AQVBbHBoYQEAEQA');   // a v1 link made before stamps: [Alpha] LH = Strike, Hit 1
 assert(v1 && v1.name === 'Alpha' && v1.id === 0 && v1.updated === 0, 'v1 links still decode');
 assert.strictEqual(P.parsePresetText('[a]\nId = nothex\nUpdated = soon\nLH = Crush, Hit 1\n').presets[0].id, 0);
+// Dodge rows ("Dodge = L: ...", never "DL = ..."), Sprint attack (light forms only), custom moves ("Power N", v3 links).
+const extra = P.parsePresetText(`[Extras]
+LH = Crush, Hit 1
+Dodge = L: Crush, Hit 3
+dodge = h : Strike, Hit 2
+Dodge = X: Crush, Hit 1
+Dodge = Crush, Hit 1
+FL = Strike, Sprint attack
+FH = Crush, Sprint attack
+LLH = Custom move, Power 128
+LHH = Custom move, Power 129
+LHL = Custom move, Hit 2
+HHL = Combat ability, Sprint attack
+`).presets[0];
+const at = presses => extra.moves[P.PRESSES.indexOf(presses)];
+assert.deepStrictEqual(at('DL'), { weapon: 4, move: 3 });
+assert.deepStrictEqual(at('DH'), { weapon: 1, move: 2 });
+assert.deepStrictEqual(at('L'), { weapon: 0, move: 1 }, 'a dodge line never sets the L row');
+assert.deepStrictEqual(at('FL'), { weapon: 1, move: 12 });
+assert.deepStrictEqual(at('LLH'), { weapon: 14, move: 128 });
+assert.deepStrictEqual(at('LHL'), { weapon: 14, move: 2 }, 'an old power row, written with a move name');
+assert.deepStrictEqual(extra.skipped, ['Dodge = X: Crush, Hit 1', 'Dodge = Crush, Hit 1', 'FH = Crush, Sprint attack',
+    'LHH = Custom move, Power 129', 'HHL = Combat ability, Sprint attack']);
+const extraText = P.presetText(extra);
+assert(extraText.includes('\r\nDodge = L: Crush, Hit 3\r\nDodge = H: Strike, Hit 2\r\n'), 'dodge lines written as the mod does');
+assert(!/^D[LH] =/m.test(extraText));
+assert(extraText.includes('\r\nLLH = Custom move, Power 128\r\n') && extraText.includes('\r\nLHL = Custom move, Power 2\r\n'));
+assert.deepStrictEqual(P.parsePresetText(extraText).presets[0].moves, extra.moves, 'extras text round trip');
+const extraCode = P.encode(extra);
+assert.deepStrictEqual(P.decode(extraCode).moves, extra.moves, 'extras link round trip (v3)');
+assert.strictEqual(P.decode(extraCode.slice(0, -3)), null);
+const linkVersion = c => atob(c.replace(/-/g, '+').replace(/_/g, '/')).charCodeAt(0);
+assert.strictEqual(linkVersion(code), 2, 'no custom move: still a v2 link');
+assert.strictEqual(linkVersion(extraCode), 3);
 assert.strictEqual(P.decode('garbage!'), null);
 assert.strictEqual(P.decode(''), null);
 assert.strictEqual(P.decode(code.slice(0, 5)), null);
