@@ -103,8 +103,8 @@
     function requisitions(preset) {
         const groups = [
             ['Light forms', new Set()], ['Heavy forms', new Set()], ['Light finishers', new Set()],
-            ['Dodge attacks', new Set()], ['Heavy finishers', new Set()], ['Sprint attacks', new Set()],
-            ['Abilities', new Set()], ['Power Creator', new Set()],
+            ['Dodge attacks', new Set()], ['Heavy finishers', new Set()], ['Abilities', new Set()],
+            ['Power Creator', new Set()],
         ];
         const at = Object.fromEntries(groups);
         for (const m of preset.moves) {
@@ -119,7 +119,6 @@
             }
             if (m.move === P.MOVE_DODGE) at['Dodge attacks'].add(name);
             if (m.move === P.MOVE_HEAVY_FINISHER) at['Heavy finishers'].add(name);
-            if (m.move === P.MOVE_SPRINT) at['Sprint attacks'].add(name);
             if (kind === 'ability') {
                 const slot = P.abilitySlot(m), key = preset.abilities[slot];
                 at['Abilities'].add(key ? P.abilityName(key) : 'Whatever is in slot ' + (slot + 1));
